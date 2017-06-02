@@ -245,13 +245,13 @@ exports.resetPass = function (req, res, next) {
   User.getUserByNameAndKey(name, key, function (err, user) {
     if (!user) {
       res.status(403);
-      return res.render('notify/notify', {error: '信息有误，密码无法重置。'});
+      return res.render('notify/notify1', {error: '信息有误，密码无法重置。'});
     }
     var now = new Date().getTime();
     var oneDay = 1000 * 60 * 60 * 24;
     if (!user.retrieve_time || now - user.retrieve_time > oneDay) {
       res.status(403);
-      return res.render('notify/notify', {error: '该链接已过期，请重新申请。'});
+      return res.render('notify/notify1', {error: '该链接已过期，请重新申请。'});
     }
     return res.render('sign/reset', {name: name, key: key});
   });
@@ -271,7 +271,7 @@ exports.updatePass = function (req, res, next) {
   }
   User.getUserByNameAndKey(name, key, ep.done(function (user) {
     if (!user) {
-      return res.render('notify/notify', {error: '错误的激活链接'});
+      return res.render('notify/notify1', {error: '错误的激活链接'});
     }
     tools.bhash(psw, ep.done(function (passhash) {
       user.pass          = passhash;
@@ -283,7 +283,7 @@ exports.updatePass = function (req, res, next) {
         if (err) {
           return next(err);
         }
-        return res.render('notify/notify', {success: '你的密码已重置。'});
+        return res.render('notify/notify1', {success: '你的密码已重置。'});
       });
     }));
   }));

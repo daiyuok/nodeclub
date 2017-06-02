@@ -9,7 +9,7 @@
 var config = require('./config');
 
 if (!config.debug && config.oneapm_key) {
-  require('oneapm');
+    require('oneapm');
 }
 
 require('colors');
@@ -24,7 +24,7 @@ require('./models');
 var GitHubStrategy = require('passport-github').Strategy;
 var githubStrategyMiddleware = require('./middlewares/github_strategy');
 var webRouter = require('./web_router');
-var apiRouterV1 = require('./api_router_v1');
+var apiRouter = require('./api_router');
 var auth = require('./middlewares/auth');
 var errorPageMiddleware = require('./middlewares/error_page');
 var proxyMiddleware = require('./middlewares/proxy');
@@ -49,12 +49,12 @@ var staticDir = path.join(__dirname, 'public');
 var assets = {};
 
 if (config.mini_assets) {
-  try {
-    assets = require('./assets.json');
-  } catch (e) {
-    logger.error('You must execute `make build` before start app when mini_assets is true.');
-    throw e;
-  }
+    try {
+        assets = require('./assets.json');
+    } catch (e) {
+        logger.error('You must execute `make build` before start app when mini_assets is true.');
+        throw e;
+    }
 }
 
 var urlinfo = require('url').parse(config.host);
@@ -73,13 +73,13 @@ app.enable('trust proxy');
 app.use(requestLog);
 
 if (config.debug) {
-  // 渲染时间
-  app.use(renderMiddleware.render);
+    // 渲染时间
+    app.use(renderMiddleware.render);
 }
 
 // 静态资源
 if (config.debug) {
-  app.use(LoaderConnect.less(__dirname)); // 测试环境用，编译 .less on the fly
+    app.use(LoaderConnect.less(__dirname)); // 测试环境用，编译 .less on the fly
 }
 app.use('/public', express.static(staticDir));
 app.use('/agent', proxyMiddleware.proxy);
@@ -88,20 +88,20 @@ app.use('/agent', proxyMiddleware.proxy);
 app.use(require('response-time')());
 app.use(helmet.frameguard('sameorigin'));
 app.use(bodyParser.json({limit: '1mb'}));
-app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
+app.use(bodyParser.urlencoded({extended: true, limit: '1mb'}));
 app.use(require('method-override')());
 app.use(require('cookie-parser')(config.session_secret));
 app.use(compress());
 app.use(session({
-  secret: config.session_secret,
-  store: new RedisStore({
-    port: config.redis_port,
-    host: config.redis_host,
-    db: config.redis_db,
-    pass: config.redis_password,
-  }),
-  resave: false,
-  saveUninitialized: false,
+    secret: config.session_secret,
+    store: new RedisStore({
+        port: config.redis_port,
+        host: config.redis_host,
+        db: config.redis_db,
+        pass: config.redis_password,
+    }),
+    resave: false,
+    saveUninitialized: false,
 }));
 
 // oauth 中间件
@@ -109,10 +109,10 @@ app.use(passport.initialize());
 
 // github oauth
 passport.serializeUser(function (user, done) {
-  done(null, user);
+    done(null, user);
 });
 passport.deserializeUser(function (user, done) {
-  done(null, user);
+    done(null, user);
 });
 passport.use(new GitHubStrategy(config.GITHUB_OAUTH, githubStrategyMiddleware));
 
@@ -121,14 +121,14 @@ app.use(auth.authUser);
 app.use(auth.blockUser());
 
 if (!config.debug) {
-  app.use(function (req, res, next) {
-    if (req.path === '/api' || req.path.indexOf('/api') === -1) {
-      csurf()(req, res, next);
-      return;
-    }
-    next();
-  });
-  app.set('view cache', true);
+    app.use(function (req, res, next) {
+        if (req.path === '/api' || req.path.indexOf('/api') === -1) {
+            csurf()(req, res, next);
+            return;
+        }
+        next();
+    });
+    app.set('view cache', true);
 }
 
 // for debug
@@ -138,45 +138,45 @@ if (!config.debug) {
 
 // set static, dynamic helpers
 _.extend(app.locals, {
-  config: config,
-  Loader: Loader,
-  assets: assets
+    config: config,
+    Loader: Loader,
+    assets: assets
 });
 
 app.use(errorPageMiddleware.errorPage);
 _.extend(app.locals, require('./common/render_helper'));
 app.use(function (req, res, next) {
-  res.locals.csrf = req.csrfToken ? req.csrfToken() : '';
-  next();
+    res.locals.csrf = req.csrfToken ? req.csrfToken() : '';
+    next();
 });
 
 app.use(busboy({
-  limits: {
-    fileSize: bytes(config.file_limit)
-  }
+    limits: {
+        fileSize: bytes(config.file_limit)
+    }
 }));
 
 // routes
-app.use('/api/v1', cors(), apiRouterV1);
+app.use('/api/v1', cors(), apiRouter);
 app.use('/', webRouter);
 
 // error handler
 if (config.debug) {
-  app.use(errorhandler());
+    app.use(errorhandler());
 } else {
-  app.use(function (err, req, res, next) {
-    logger.error(err);
-    return res.status(500).send('500 status');
-  });
+    app.use(function (err, req, res, next) {
+        logger.error(err);
+        return res.status(500).send('500 status');
+    });
 }
 
 if (!module.parent) {
-  app.listen(config.port, function () {
-    logger.info('NodeClub listening on port', config.port);
-    logger.info('God bless love....');
-    logger.info('You can debug your app with http://' + config.hostname + ':' + config.port);
-    logger.info('');
-  });
+    app.listen(config.port, function () {
+        logger.info('NodeClub listening on port', config.port);
+        logger.info('God bless love....');
+        logger.info('You can debug your app with http://' + config.hostname + ':' + config.port);
+        logger.info('');
+    });
 }
 
 module.exports = app;
